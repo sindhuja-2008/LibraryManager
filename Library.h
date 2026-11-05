@@ -33,6 +33,9 @@ public:
     void listMembers() const;
 
     void searchBook(const std::string& keyword) const;
+    void binarySearchBook(const std::string& id) const;
+    void sortBooksByTitle();
+    void sortBooksById();
     bool updateBook(const std::string& id,
                     const std::string& title,
                     const std::string& author,

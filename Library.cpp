@@ -1,4 +1,3 @@
-
 #include "Library.h"
 
 #include <algorithm>
@@ -11,8 +10,10 @@
 using namespace std;
 
 namespace {
+
     string csvQuote(const string& value) {
         string result = "\"";
+
         for (char ch : value) {
             if (ch == '"') {
                 result += "\"\"";
@@ -20,6 +21,7 @@ namespace {
                 result += ch;
             }
         }
+
         result += '"';
         return result;
     }
@@ -58,14 +60,16 @@ namespace {
 
     string lowerText(string value) {
         transform(value.begin(), value.end(), value.begin(),
-                  [](unsigned char ch) {
-                      return static_cast<char>(tolower(ch));
-                  });
+                   [](unsigned char ch) {
+                       return static_cast<char>(tolower(ch));
+                   });
+
         return value;
     }
 
     bool validDate(const string& date) {
-        if (date.size() != 10 || date[4] != '-' || date[7] != '-') {
+        if (date.size() != 10 ||
+            date[4] != '-' || date[7] != '-') {
             return false;
         }
 
@@ -104,10 +108,13 @@ namespace {
     bool validYear(int year) {
         return year >= 1 && year <= 9999;
     }
+
 }
 
+// SAVE BOOKS
 bool Library::saveBooks() const {
     ofstream file(booksFile, ios::trunc);
+
     if (!file) {
         cerr << "Error: Could not save books.\n";
         return false;
@@ -142,8 +149,10 @@ bool Library::saveBooks() const {
     return !file.fail();
 }
 
+// SAVE MEMBERS
 bool Library::saveMembers() const {
     ofstream file(membersFile, ios::trunc);
+
     if (!file) {
         cerr << "Error: Could not save members.\n";
         return false;
@@ -161,8 +170,10 @@ bool Library::saveMembers() const {
     return !file.fail();
 }
 
+// SAVE LOANS
 bool Library::saveLoans() const {
     ofstream file(loansFile, ios::trunc);
+
     if (!file) {
         cerr << "Error: Could not save loans.\n";
         return false;
@@ -181,22 +192,26 @@ bool Library::saveLoans() const {
     file.close();
     return !file.fail();
 }
-
+// LOAD DATA
 bool Library::loadData() {
     books.clear();
     members.clear();
     loans.clear();
 
-    // Load books and their initial borrowing status.
+    // LOAD BOOKS
     ifstream bookFile(booksFile);
 
     if (bookFile) {
         string line;
-        getline(bookFile, line); // Skip CSV header.
+        getline(bookFile, line);
 
         while (getline(bookFile, line)) {
-            if (line.empty()) {
+            if (line.find_first_not_of(" \t\r\n") == string::npos) {
                 continue;
+            }
+
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
             }
 
             vector<string> f = parseCSV(line);
@@ -219,7 +234,9 @@ bool Library::loadData() {
 
                 auto duplicate = find_if(
                     books.begin(), books.end(),
-                    [&](const Book& b) { return b.getId() == f[0]; });
+                    [&](const Book& b) {
+                        return b.getId() == f[0];
+                    });
 
                 if (duplicate != books.end()) {
                     cerr << "Warning: Duplicate book ID skipped: "
@@ -230,13 +247,14 @@ bool Library::loadData() {
                 books.emplace_back(
                     f[0], f[1], f[2], f[3], year,
                     f[5] == "available");
+
             } catch (const exception&) {
                 cerr << "Warning: Skipping book row with invalid year.\n";
             }
         }
     }
 
-    // Load members.
+    // LOAD MEMBERS
     ifstream memberFile(membersFile);
 
     if (memberFile) {
@@ -244,8 +262,12 @@ bool Library::loadData() {
         getline(memberFile, line);
 
         while (getline(memberFile, line)) {
-            if (line.empty()) {
+            if (line.find_first_not_of(" \t\r\n") == string::npos) {
                 continue;
+            }
+
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
             }
 
             vector<string> f = parseCSV(line);
@@ -257,7 +279,9 @@ bool Library::loadData() {
 
             auto duplicate = find_if(
                 members.begin(), members.end(),
-                [&](const Member& m) { return m.getId() == f[0]; });
+                [&](const Member& m) {
+                    return m.getId() == f[0];
+                });
 
             if (duplicate == members.end()) {
                 members.emplace_back(f[0], f[1], f[2]);
@@ -268,7 +292,7 @@ bool Library::loadData() {
         }
     }
 
-    // Load borrowing records.
+    // LOAD LOANS
     ifstream loanFile(loansFile);
 
     if (loanFile) {
@@ -276,8 +300,15 @@ bool Library::loadData() {
         getline(loanFile, line);
 
         while (getline(loanFile, line)) {
-            if (line.empty()) {
+
+            // Skip blank lines
+            if (line.find_first_not_of(" \t\r\n") == string::npos) {
                 continue;
+            }
+
+            // Remove carriage return
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
             }
 
             vector<string> f = parseCSV(line);
@@ -293,11 +324,15 @@ bool Library::loadData() {
 
             bool bookExists = any_of(
                 books.begin(), books.end(),
-                [&](const Book& b) { return b.getId() == f[0]; });
+                [&](const Book& b) {
+                    return b.getId() == f[0];
+                });
 
             bool memberExists = any_of(
                 members.begin(), members.end(),
-                [&](const Member& m) { return m.getId() == f[1]; });
+                [&](const Member& m) {
+                    return m.getId() == f[1];
+                });
 
             bool returned = f[4] == "true";
 
@@ -329,7 +364,7 @@ bool Library::loadData() {
         }
     }
 
-    // Active loans determine availability.
+    // UPDATE BOOK AVAILABILITY
     for (Book& book : books) {
         bool borrowed = any_of(
             loans.begin(), loans.end(),
@@ -347,7 +382,7 @@ bool Library::loadData() {
 
     return true;
 }
-
+// ADD BOOK
 bool Library::addBook(const Book& book) {
     if (book.getId().empty() || book.getTitle().empty() ||
         book.getAuthor().empty() || book.getCategory().empty() ||
@@ -374,6 +409,7 @@ bool Library::addBook(const Book& book) {
     return true;
 }
 
+// ADD MEMBER
 bool Library::addMember(const Member& member) {
     if (member.getId().empty() || member.getName().empty()) {
         cout << "Invalid member details.\n";
@@ -398,6 +434,7 @@ bool Library::addMember(const Member& member) {
     return true;
 }
 
+// DISPLAY BOOKS
 void Library::listBooks() const {
     if (books.empty()) {
         cout << "No books found.\n";
@@ -405,6 +442,7 @@ void Library::listBooks() const {
     }
 
     cout << "\nBOOK LIST\n";
+
     cout << left << setw(10) << "ID"
          << setw(32) << "TITLE"
          << setw(24) << "AUTHOR"
@@ -423,6 +461,7 @@ void Library::listBooks() const {
     }
 }
 
+// DISPLAY MEMBERS
 void Library::listMembers() const {
     if (members.empty()) {
         cout << "No members found.\n";
@@ -438,6 +477,7 @@ void Library::listMembers() const {
     }
 }
 
+// LINEAR SEARCH
 void Library::searchBook(const string& keyword) const {
     string key = lowerText(keyword);
     bool found = false;
@@ -447,10 +487,13 @@ void Library::searchBook(const string& keyword) const {
             lowerText(book.getTitle()).find(key) != string::npos ||
             lowerText(book.getAuthor()).find(key) != string::npos ||
             lowerText(book.getCategory()).find(key) != string::npos) {
+
             cout << book.getId() << " | " << book.getTitle()
                  << " | " << book.getAuthor()
-                 << " | " << (book.isAvailable() ? "Available" : "Borrowed")
+                 << " | "
+                 << (book.isAvailable() ? "Available" : "Borrowed")
                  << '\n';
+
             found = true;
         }
     }
@@ -460,11 +503,70 @@ void Library::searchBook(const string& keyword) const {
     }
 }
 
+// BINARY SEARCH
+void Library::binarySearchBook(const string& id) const {
+    if (books.empty()) {
+        cout << "No books available to search.\n";
+        return;
+    }
+
+    // Create a sorted copy of the books.
+    vector<Book> sortedBooks = books;
+
+    sort(sortedBooks.begin(), sortedBooks.end(),
+         [](const Book& a, const Book& b) {
+             return a.getId() < b.getId();
+         });
+
+    // Perform Binary Search.
+    auto it = lower_bound(
+        sortedBooks.begin(), sortedBooks.end(), id,
+        [](const Book& book, const string& searchId) {
+            return book.getId() < searchId;
+        });
+
+    if (it != sortedBooks.end() && it->getId() == id) {
+        cout << "Book found using Binary Search:\n";
+
+        cout << it->getId() << " | " << it->getTitle()
+             << " | " << it->getAuthor()
+             << " | "
+             << (it->isAvailable() ? "Available" : "Borrowed")
+             << '\n';
+    } else {
+        cout << "Book ID not found.\n";
+    }
+}
+
+// SORT BY TITLE
+void Library::sortBooksByTitle() {
+    sort(books.begin(), books.end(),
+         [](const Book& a, const Book& b) {
+             return lowerText(a.getTitle()) <
+                    lowerText(b.getTitle());
+         });
+
+    cout << "Books sorted by title.\n";
+    listBooks();
+}
+
+// SORT BY ID
+void Library::sortBooksById() {
+    sort(books.begin(), books.end(),
+         [](const Book& a, const Book& b) {
+             return a.getId() < b.getId();
+         });
+
+    cout << "Books sorted by ID.\n";
+    listBooks();
+}
+// UPDATE BOOK
 bool Library::updateBook(const string& id,
                          const string& title,
                          const string& author,
                          const string& category,
                          int year) {
+
     if (title.empty() || author.empty() || category.empty() ||
         !validYear(year)) {
         cout << "Invalid book details.\n";
@@ -495,10 +597,12 @@ bool Library::updateBook(const string& id,
     return false;
 }
 
+// ISSUE BOOK
 bool Library::issueBook(const string& bookId,
                         const string& memberId,
                         const string& issueDate,
                         const string& dueDate) {
+
     if (!validDate(issueDate) || !validDate(dueDate) ||
         dueDate < issueDate) {
         cout << "Invalid dates. Use YYYY-MM-DD and ensure due date is not earlier.\n";
@@ -543,8 +647,10 @@ bool Library::issueBook(const string& bookId,
     if (!saveLoans() || !saveBooks()) {
         loans.pop_back();
         selectedBook->setAvailable(true);
+
         saveLoans();
         saveBooks();
+
         cout << "Could not save loan. Operation cancelled.\n";
         return false;
     }
@@ -553,8 +659,10 @@ bool Library::issueBook(const string& bookId,
     return true;
 }
 
+// RETURN BOOK
 bool Library::returnBook(const string& bookId,
                          const string& memberId) {
+
     for (Loan& loan : loans) {
         if (loan.getBookId() == bookId &&
             loan.getMemberId() == memberId &&
@@ -589,6 +697,7 @@ bool Library::returnBook(const string& bookId,
     return false;
 }
 
+// DISPLAY AVAILABLE BOOKS
 void Library::listAvailableBooks() const {
     bool found = false;
 
@@ -599,6 +708,7 @@ void Library::listAvailableBooks() const {
             cout << book.getId() << " | "
                  << book.getTitle() << " | "
                  << book.getAuthor() << '\n';
+
             found = true;
         }
     }

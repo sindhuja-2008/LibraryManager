@@ -60,7 +60,7 @@ int main() {
         cout << "\n========== LIBRARY MANAGER ==========\n"
              << "1. Add Book\n"
              << "2. List Books\n"
-             << "3. Search Book\n"
+             << "3. Search Book (Linear Search)\n"
              << "4. Update Book\n"
              << "5. Register Member\n"
              << "6. List Members\n"
@@ -68,9 +68,12 @@ int main() {
              << "8. Return Book\n"
              << "9. List Available Books\n"
              << "10. Exit\n"
+             << "11. Binary Search by Book ID\n"
+             << "12. Sort Books by Title\n"
+             << "13. Sort Books by ID\n"
              << "=====================================\n";
 
-        int choice = readNumber("Enter your choice: ", 1, 10);
+        int choice = readNumber("Enter your choice: ", 1, 13);
 
         if (choice == 1) {
             string id = readText("Book ID: ");
@@ -80,10 +83,14 @@ int main() {
             int year = readNumber("Year (1-9999): ", 1, 9999);
 
             library.addBook(Book(id, title, author, category, year));
+
         } else if (choice == 2) {
             library.listBooks();
+
         } else if (choice == 3) {
-            library.searchBook(readText("Search by ID, title, author, or category: "));
+            library.searchBook(
+                readText("Search by ID, title, author, or category: "));
+
         } else if (choice == 4) {
             string id = readText("Book ID to update: ");
             string title = readText("New title: ");
@@ -92,14 +99,17 @@ int main() {
             int year = readNumber("New year (1-9999): ", 1, 9999);
 
             library.updateBook(id, title, author, category, year);
+
         } else if (choice == 5) {
             string id = readText("Member ID: ");
             string name = readText("Member name: ");
             string email = readText("Member email: ");
 
             library.addMember(Member(id, name, email));
+
         } else if (choice == 6) {
             library.listMembers();
+
         } else if (choice == 7) {
             string bookId = readText("Book ID: ");
             string memberId = readText("Member ID: ");
@@ -107,16 +117,29 @@ int main() {
             string dueDate = readText("Due date (YYYY-MM-DD): ");
 
             library.issueBook(bookId, memberId, issueDate, dueDate);
+
         } else if (choice == 8) {
             string bookId = readText("Book ID: ");
             string memberId = readText("Member ID: ");
 
             library.returnBook(bookId, memberId);
+
         } else if (choice == 9) {
             library.listAvailableBooks();
-        } else {
+
+        } else if (choice == 10) {
             cout << "Thank you for using Library Manager!\n";
             break;
+
+        } else if (choice == 11) {
+            string id = readText("Enter exact Book ID: ");
+            library.binarySearchBook(id);
+
+        } else if (choice == 12) {
+            library.sortBooksByTitle();
+
+        } else if (choice == 13) {
+            library.sortBooksById();
         }
     }
 
