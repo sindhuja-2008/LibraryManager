@@ -1,1 +1,12 @@
+# Compiled application binaries
+library_manager
 library_manager.exe
+
+# Object files
+*.o
+*.obj
+
+# IDE/build artifacts
+.vscode/
+.idea/
+build/

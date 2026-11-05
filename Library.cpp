@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <ctime>
 
 using namespace std;
 
@@ -271,6 +272,10 @@ bool Library::loadData() {
             }
 
             vector<string> f = parseCSV(line);
+
+            if (f.size() == 3 && f[0] == "member_id") {
+                continue; // Ignore a repeated CSV header row.
+            }
 
             if (f.size() != 3 || f[0].empty() || f[1].empty()) {
                 cerr << "Warning: Skipping invalid member row.\n";
@@ -716,4 +721,56 @@ void Library::listAvailableBooks() const {
     if (!found) {
         cout << "No books are currently available.\n";
     }
+}
+
+// DISPLAY LIBRARY ANALYTICS
+void Library::displayAnalyticsReport() const {
+    int availableCount = 0;
+    int borrowedCount = 0;
+    int overdueCount = 0;
+
+    // Build today's date in YYYY-MM-DD format for safe string comparison.
+    const std::time_t now = std::time(nullptr);
+    const std::tm* localTime = std::localtime(&now);
+    char dateBuffer[11] = {};
+
+    if (localTime == nullptr ||
+        std::strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d",
+                      localTime) == 0) {
+        std::cerr << "Error: Could not determine today's date.\n";
+        return;
+    }
+
+    const std::string today(dateBuffer);
+
+    for (const Book& book : books) {
+        if (book.isAvailable()) {
+            ++availableCount;
+        } else {
+            ++borrowedCount;
+        }
+    }
+
+    for (const Loan& loan : loans) {
+        if (!loan.isReturned() && loan.getDueDate() < today) {
+            ++overdueCount;
+        }
+    }
+
+    const int totalBooks = static_cast<int>(books.size());
+    const double utilization = totalBooks == 0
+        ? 0.0
+        : (static_cast<double>(borrowedCount) / totalBooks) * 100.0;
+
+    std::cout << "\n========== LIBRARY ANALYTICS ==========\n"
+              << "Report date       : " << today << '\n'
+              << "Total books       : " << totalBooks << '\n'
+              << "Available books   : " << availableCount << '\n'
+              << "Borrowed books    : " << borrowedCount << '\n'
+              << "Registered members: " << members.size() << '\n'
+              << "Total loan records: " << loans.size() << '\n'
+              << "Overdue loans     : " << overdueCount << '\n'
+              << std::fixed << std::setprecision(1)
+              << "Borrowing rate    : " << utilization << "%\n"
+              << "=======================================\n";
 }

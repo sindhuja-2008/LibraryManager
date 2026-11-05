@@ -32,7 +32,7 @@ int readNumber(const string& prompt, int minimum, int maximum) {
         cout << prompt;
 
         if (!getline(cin, line)) {
-            return maximum;
+            return -1;
         }
 
         try {
@@ -71,9 +71,14 @@ int main() {
              << "11. Binary Search by Book ID\n"
              << "12. Sort Books by Title\n"
              << "13. Sort Books by ID\n"
+             << "14. Library Analytics Report\n"
              << "=====================================\n";
 
-        int choice = readNumber("Enter your choice: ", 1, 13);
+        int choice = readNumber("Enter your choice: ", 1, 14);
+        if (choice == -1) {
+            cout << "\nInput closed. Exiting Library Manager.\\n";
+            break;
+        }
 
         if (choice == 1) {
             string id = readText("Book ID: ");
@@ -140,6 +145,9 @@ int main() {
 
         } else if (choice == 13) {
             library.sortBooksById();
+
+        } else if (choice == 14) {
+            library.displayAnalyticsReport();
         }
     }
 

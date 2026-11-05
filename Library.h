@@ -51,6 +51,7 @@ public:
                     const std::string& memberId);
 
     void listAvailableBooks() const;
+    void displayAnalyticsReport() const;
 };
 
 #endif
